@@ -113,8 +113,10 @@
 
           <div class="card-body">           
             <div class="card-title row justify-content-center">            
-              <button class="btn rounded-circle" type="button" id="btnEditVoyage" data-toggle="modal" data-target="#modalVoyage" 
-                      onclick="editVoyage('<%= voyage.id %>', '<%= voyage.destination %>', '<%= voyage.pays %>', '<%= voyage.prix %>', '<%= voyage.devise %>', '<%= voyage.image %>', '<%= voyage.titre %>', '<%= voyage.description %>')">
+              <!-- Les données passent par data-voyage (JSON échappé) : les apostrophes des
+                   descriptions ne cassent plus le JavaScript et ne peuvent plus être injectées. -->
+              <button class="btn rounded-circle" type="button" data-toggle="modal" data-target="#modalVoyage"
+                      data-voyage="<%= JSON.stringify(voyage) %>" onclick="editVoyage(this)">
                   <i class="fas fa-edit"></i>
               </button>              
               <label class="d-none"><%= voyage.id %></label>
