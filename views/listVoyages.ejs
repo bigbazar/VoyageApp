@@ -41,12 +41,13 @@
             </button>
           </div>
           <div class="modal-body">
-            <form method="post" action="/update">
+            <!-- Création : POST /voyages. Édition : le script ajoute l'identifiant dans
+                 l'URL et active le champ _method pour obtenir PUT /voyages/:id -->
+            <form method="post" action="/voyages" id="formVoyage">
               <!-- Jeton CSRF : le serveur refuse toute modification sans ce champ -->
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <input type="hidden" name="_method" value="PUT" id="methodeUpdate" disabled />
               <div class="mb-3">
-                <input class="form-control" type="number"  id="idUpdate" name="id" style="opacity: 0;"/>
-
                 <label class="form-label" for="destination">Destination :</label>
                 <input class="form-control" placeholder="Destination"  id="destination" name="destination" required maxlength="80"/>
               </div>
@@ -90,8 +91,9 @@
 
     <!-- Formulaire formSearch de recherche (submit dans voyages.js)-->
     <!-- Cards des destinations -->
-    <form class="form-inline justify-content-start mb-4" id="formSearch" method="post" action="/search">
-      <input class="form-control mr-sm-2" placeholder="Search" aria-label="Search" id="searchVoyage" name="searchVoyage"/>
+    <!-- La recherche est une simple lecture : un GET, dont l'URL reste partageable -->
+    <form class="form-inline justify-content-start mb-4" id="formSearch" method="get" action="/voyages">
+      <input class="form-control mr-sm-2" placeholder="Recherche" aria-label="Recherche" id="recherche" name="q" value="<%= recherche %>"/>
       <button class="btn btn-outline-info my-2 my-sm-0" type="submit">
         <i class="fas fa-search"></i>
       </button> 
@@ -104,19 +106,23 @@
     
     <!-- Cards des destinations -->
     <div class="row">
+      <% if (voyages.length === 0) { %>
+        <div class="alert alert-info m-3" role="alert">Aucun voyage ne correspond à votre recherche.</div>
+      <% } %>
       <% voyages.forEach(voyage => { %>  
         <div class="card col-2 border-dark text-center m-1" style="width: 18rem;">
           
           <div>
             <!-- Bouton Supprimer -->
-            <form action="/delete/<%= voyage.id %>" method="post">
+            <form action="/voyages/<%= voyage.id %>" method="post">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <input type="hidden" name="_method" value="DELETE" />
                 <button type="submit" class="btn btn-danger position-absolute top-0 start-50 rounded-circle">
                 <i class="fas fa-trash"></i>
               </button>
             </form>
           
-            <a href="/<%= voyage.id %>">
+            <a href="/voyages/<%= voyage.id %>">
               <img class="card-img-top img-top" src="<%= voyage.image %>" alt="Card image cap">
             </a>
           </div>

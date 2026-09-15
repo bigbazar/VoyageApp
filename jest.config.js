@@ -7,7 +7,14 @@
 module.exports = {
   testEnvironment: 'node',
   testMatch: ['**/tests/**/*.test.js'],
-  collectCoverageFrom: ['app.js', 'routes/**/*.js', 'middlewares/**/*.js', 'validators/**/*.js'],
+  collectCoverageFrom: [
+    'app.js',
+    'routes/**/*.js',
+    'controllers/**/*.js',
+    'repositories/**/*.js',
+    'middlewares/**/*.js',
+    'validators/**/*.js',
+  ],
   coveragePathIgnorePatterns: ['/node_modules/', '/routes/module.js'],
   coverageDirectory: 'coverage',
 };

@@ -34,11 +34,12 @@ Les modifications ne sont pas encore validées dans git (7 fichiers modifiés, 2
 
 ## Variables d'environnement
 
-| Variable      | Rôle                                                                                                                    | Défaut                      |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------- | --------------------------- |
-| `PORT`        | port d'écoute                                                                                                           | `3000`                      |
-| `NODE_ENV`    | `development` active la documentation Swagger                                                                           | `development`               |
-| `CSRF_SECRET` | secret de signature des jetons CSRF ; à définir en production pour que les jetons restent valables après un redémarrage | tiré au hasard au démarrage |
+| Variable            | Rôle                                                                                                                    | Défaut                      |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| `PORT`              | port d'écoute                                                                                                           | `3000`                      |
+| `NODE_ENV`          | `development` active la documentation Swagger                                                                           | `development`               |
+| `CSRF_SECRET`       | secret de signature des jetons CSRF ; à définir en production pour que les jetons restent valables après un redémarrage | tiré au hasard au démarrage |
+| `VOYAGES_DATA_FILE` | chemin du fichier de données des voyages                                                                                | `data/voyages.json`         |
 
 ## Documentation de l'API
 
@@ -73,7 +74,7 @@ npm run format:check   # vérifie le formatage sans modifier les fichiers
 Les fichiers `views/*.ejs` ne sont pas formatés automatiquement, Prettier ne
 sachant pas les analyser.
 
-Les tests — suite jest + supertest dans tests/, un fichier par thème, avec un assistant commun ([aide.js (line 1)](/home/lionel/workgit/node/VoyageApp/tests/aide.js:1)) qui repart d'une application neuve à chaque test (les voyages vivent en mémoire, sinon les tests s'influenceraient entre eux), récupère le jeton CSRF de la page et relit le JSON des cartes exactement comme le fait le navigateur.
+Les tests — suite jest + supertest dans tests/, un fichier par thème, avec un assistant commun ([aide.js (line 1)](/home/lionel/workgit/node/VoyageApp/tests/aide.js:1)) qui repart d'une application neuve à chaque test (chacun travaille sur son propre fichier de données temporaire, sinon les tests s'influenceraient entre eux), récupère le jeton CSRF de la page et relit le JSON des cartes exactement comme le fait le navigateur.
 
 - [voyages.test.js (line 1)](/home/lionel/workgit/node/VoyageApp/tests/voyages.test.js:1) — bug 1 (identifiant inconnu, URL non numérique) et bug 4 (identifiants uniques après suppression, édition qui conserve l'id, suppression invalide).
 - [recherche.test.js (line 1)](/home/lionel/workgit/node/VoyageApp/tests/recherche.test.js:1) — bug 3 : absence de doublons, champ vide ou absent, recherche par destination, pays et prix, et l'exemption CSRF de cette route.
@@ -88,3 +89,51 @@ Un bug découvert par les tests : la route /:id interceptait /users, ce qui rend
 
 Le README.md gagne une section « Tests et qualité », et le rapport d'audit est à jour.
 Deux réserves honnêtes. Les tests démarrent l'application sur un port local éphémère : dans cet environnement cloisonné j'ai dû demander une autorisation à chaque exécution, mais sur votre machine npm test fonctionne directement. Et le diff est volumineux (environ 6 300 lignes ajoutées) — l'essentiel vient du package-lock.json avec les nouvelles dépendances de développement, le reste étant le formatage de 20 fichiers et les tests eux-mêmes.
+
+# 16.09.2026 00:15 sortir les données du routeur vers une couche de persistance et passer à des routes REST
+
+La couche de données — [repositories/voyages.js (line 1)](/home/lionel/workgit/node/VoyageApp/repositories/voyages.js:1) expose lister, trouver, creer, modifier et supprimer, et gère seul la persistance dans data/voyages.json. Chaque écriture passe par un fichier temporaire renommé ensuite, donc le fichier de données n'est jamais laissé à moitié écrit ; s'il est absent ou illisible, il est recréé depuis models/BaseVoyages.js. Le chemin se règle par VOYAGES_DATA_FILE, ce qui permet aux tests de travailler sur leurs propres fichiers sans jamais toucher aux vraies données.
+
+Les routes REST — [routes/voyages.js (line 1)](/home/lionel/workgit/node/VoyageApp/routes/voyages.js:1) déclare GET /voyages, GET /voyages/:id, POST /voyages, PUT /voyages/:id et DELETE /voyages/:id. Comme un formulaire HTML ne sait envoyer que GET et POST, les vues ajoutent un champ caché _method que [methodOverride.js (line 1)](/home/lionel/workgit/node/VoyageApp/middlewares/methodOverride.js:1) traduit en PUT ou DELETE ; la protection CSRF continue de s'appliquer puisqu'elle ne dépend pas du verbe. Les contrôleurs sont dans [controllers/voyages.js (line 1)](/home/lionel/workgit/node/VoyageApp/controllers/voyages.js:1) : validation, appel du dépôt, choix de la vue. [routes/index.js (line 1)](/home/lionel/workgit/node/VoyageApp/routes/index.js:1) ne contient plus que la page d'accueil.
+
+Trois améliorations découlent directement de cette restructuration. La recherche est devenue GET /voyages?q=… : l'URL est partageable, plus aucune route n'a besoin d'être exemptée du CSRF, et une recherche sans résultat affiche un état vide au lieu d'une 404. Après une écriture, le serveur redirige en 303 vers la liste, donc rafraîchir la page ne rejoue plus l'action. Enfin, le formulaire du modal bascule tout seul entre création et édition : le script place l'identifiant dans l'URL et active le champ _method.
+
+Vérifications
+- 68 tests répartis en 5 suites, dont une nouvelle suite dédiée au dépôt ([depot.test.js (line 1)](/home/lionel/workgit/node/VoyageApp/tests/depot.test.js:1)) qui contrôle le tri, les filtres, l'attribution des identifiants, la persistance après rechargement, la reprise sur fichier corrompu et l'absence de fichier temporaire résiduel.
+- Couverture : 98 % des lignes, 89 % des branches, 100 % des fonctions.
+- 13 contrôles dans un vrai navigateur, dont un harnais qui charge le fichier JavaScript du projet et confirme que cliquer sur « modifier » vise bien /voyages/3 avec _method actif, que « ajouter » revient sur /voyages, et que l'apostrophe de « d'Ellis Island » survit au passage.
+
+Points à connaître — les anciennes URL (/update, /delete/:id, /3, POST /search) n'existent plus ; les liens de la vue ont été mis à jour, mais d'éventuels favoris ou scripts externes sont à adapter. Les écritures sont volontairement synchrones, ce qui suffit largement pour huit voyages, et le commentaire d'en-tête du dépôt indique qu'il est le seul module à remplacer par SQLite si le volume grossit. Le fichier data/voyages.json est un état d'exécution, ignoré par git. Enfin, la section « Tests et qualité » de votre README annonce encore 96 % de couverture, chiffre daté de l'étape 3.
+
+## Routes
+
+| Verbe    | Chemin            | Rôle                                   |
+| -------- | ----------------- | -------------------------------------- |
+| `GET`    | `/` et `/voyages` | liste des voyages, filtrable par `?q=` |
+| `POST`   | `/voyages`        | création d'un voyage                   |
+| `GET`    | `/voyages/:id`    | détail d'un voyage                     |
+| `PUT`    | `/voyages/:id`    | modification d'un voyage               |
+| `DELETE` | `/voyages/:id`    | suppression d'un voyage                |
+
+Les formulaires HTML ne savent envoyer que `GET` et `POST` : ils ajoutent un champ
+caché `_method` que `middlewares/methodOverride.js` traduit en `PUT` ou `DELETE`.
+Après une écriture, le serveur redirige vers la liste (motif Post/Redirect/Get),
+ce qui évite qu'un rafraîchissement rejoue la modification.
+
+## Organisation du code
+
+```
+app.js            point d'entrée : middlewares puis branchement des routes
+routes/           déclaration des URL et des verbes HTTP
+controllers/      orchestration : validation, appel du dépôt, choix de la vue
+repositories/     accès aux données et persistance
+validators/       règles de validation d'un voyage
+middlewares/      jeton CSRF, méthode HTTP des formulaires
+models/           jeu de données initial
+views/            gabarits EJS
+tests/            tests automatisés (jest + supertest)
+```
+
+Les voyages sont enregistrés dans `data/voyages.json`, créé au premier démarrage à
+partir de `models/BaseVoyages.js` s'il n'existe pas. Ce fichier contient des données
+d'exécution : il est ignoré par git.

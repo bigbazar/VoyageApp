@@ -14,6 +14,13 @@
     "/": {
       "get": {
         "description": "",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "type": "string"
+          }
+        ],
         "responses": {
           "default": {
             "description": ""
@@ -21,7 +28,46 @@
         }
       }
     },
-    "/{id}": {
+    "/voyages/": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "_method": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/voyages/{id}": {
       "get": {
         "description": "",
         "parameters": [
@@ -37,19 +83,23 @@
             "description": "Not Found"
           }
         }
-      }
-    },
-    "/search": {
-      "post": {
+      },
+      "put": {
         "description": "",
         "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
           {
             "name": "body",
             "in": "body",
             "schema": {
               "type": "object",
               "properties": {
-                "searchVoyage": {
+                "_method": {
                   "example": "any"
                 }
               }
@@ -61,20 +111,8 @@
             "description": "Not Found"
           }
         }
-      }
-    },
-    "/update": {
-      "post": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/delete/{id}": {
-      "post": {
+      },
+      "delete": {
         "description": "",
         "parameters": [
           {
@@ -82,6 +120,18 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "_method": {
+                  "example": "any"
+                }
+              }
+            }
           }
         ],
         "responses": {

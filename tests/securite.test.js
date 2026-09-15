@@ -26,34 +26,48 @@ describe('En-têtes de sécurité', () => {
 });
 
 describe('Protection CSRF', () => {
-  test('un ajout sans jeton est refusé', async () => {
+  test('une création sans jeton est refusée', async () => {
     await request(app)
-      .post('/update')
+      .post('/voyages')
       .type('form')
       .send({ destination: 'Pirate', pays: 'Test', prix: '1' })
       .expect(403);
   });
 
-  test('un ajout avec un jeton falsifié est refusé', async () => {
+  test('une création avec un jeton falsifié est refusée', async () => {
     await request(app)
-      .post('/update')
+      .post('/voyages')
       .type('form')
-      .send({ _csrf: 'abc.1700000000000.deadbeef', destination: 'Pirate', pays: 'Test', prix: '1' })
+      .send({
+        _csrf: 'abc.1700000000000.deadbeef',
+        destination: 'Pirate',
+        pays: 'Test',
+        prix: '1',
+      })
       .expect(403);
   });
 
   test('une suppression sans jeton est refusée et ne modifie rien', async () => {
-    await request(app).post('/delete/1').type('form').send({}).expect(403);
-    await request(app).get('/1').expect(200);
+    await request(app).post('/voyages/1').type('form').send({ _method: 'DELETE' }).expect(403);
+    await request(app).get('/voyages/1').expect(200);
   });
 
-  test('un ajout avec le jeton de la page est accepté', async () => {
-    const res = await request(app)
-      .post('/update')
+  test('une modification sans jeton est refusée', async () => {
+    await request(app)
+      .put('/voyages/1')
+      .type('form')
+      .send({ destination: 'Pirate', pays: 'Test', prix: '1' })
+      .expect(403);
+  });
+
+  test('une création avec le jeton de la page est acceptée', async () => {
+    await request(app)
+      .post('/voyages')
       .type('form')
       .send({ _csrf: jeton, destination: 'Bergame', pays: 'Italie', prix: '120', devise: '€' })
-      .expect(200);
+      .expect(303);
 
+    const res = await request(app).get('/voyages').expect(200);
     expect(res.text).toContain('Bergame');
   });
 
@@ -67,7 +81,7 @@ describe('Protection CSRF', () => {
 describe('Validation serveur', () => {
   const envoyer = (champs) =>
     request(app)
-      .post('/update')
+      .post('/voyages')
       .type('form')
       .send(Object.assign({ _csrf: jeton }, champs));
 
@@ -84,9 +98,9 @@ describe('Validation serveur', () => {
     ],
     ['devise inconnue', { destination: 'Nice', pays: 'France', prix: '10', devise: 'XXX' }],
     ['destination trop longue', { destination: 'a'.repeat(120), pays: 'France', prix: '10' }],
-    ['identifiant non numérique', { id: 'abc', destination: 'Nice', pays: 'France', prix: '10' }],
   ])('refuse un formulaire invalide : %s', async (libelle, champs) => {
     const res = await envoyer(champs);
+
     expect(res.status).toBe(400);
     expect(res.text).toContain('Enregistrement refusé');
   });
@@ -102,14 +116,11 @@ describe('Validation serveur', () => {
   });
 
   test('normalise le prix en nombre et applique la devise par défaut', async () => {
-    const res = await envoyer({
-      destination: 'Sienne',
-      pays: 'Italie',
-      prix: '149,90',
-      devise: '',
-    }).expect(200);
+    await envoyer({ destination: 'Sienne', pays: 'Italie', prix: '149,90', devise: '' }).expect(
+      303,
+    );
 
-    const voyage = voyageDeLaPage(res.text, 9);
+    const voyage = voyageDeLaPage((await request(app).get('/voyages')).text, 9);
     expect(voyage).toBeDefined();
     expect(voyage.prix).toBe(149.9);
     expect(typeof voyage.prix).toBe('number');
@@ -117,14 +128,9 @@ describe('Validation serveur', () => {
   });
 
   test('ignore les champs non attendus', async () => {
-    const res = await envoyer({
-      destination: 'Gand',
-      pays: 'Belgique',
-      prix: '80',
-      role: 'admin',
-    }).expect(200);
+    await envoyer({ destination: 'Gand', pays: 'Belgique', prix: '80', role: 'admin' }).expect(303);
 
-    const voyage = voyageDeLaPage(res.text, 9);
+    const voyage = voyageDeLaPage((await request(app).get('/voyages')).text, 9);
     expect(voyage.role).toBeUndefined();
     expect(Object.keys(voyage).sort()).toEqual([
       'description',
@@ -139,18 +145,31 @@ describe('Validation serveur', () => {
   });
 
   test('un voyage existant reste modifiable avec des données valides', async () => {
-    await envoyer({
-      id: '5',
-      destination: 'Edimbourg',
-      pays: 'Ecosse',
-      prix: '210',
-      devise: '£',
-      image: 'https://exemple.fr/edimbourg.jpg',
-      titre: 'Edimbourg',
-      description: 'Une ville à découvrir',
-    }).expect(200);
+    await request(app)
+      .put('/voyages/5')
+      .type('form')
+      .send({
+        _csrf: jeton,
+        destination: 'Edimbourg',
+        pays: 'Ecosse',
+        prix: '210',
+        devise: '£',
+        image: 'https://exemple.fr/edimbourg.jpg',
+        titre: 'Edimbourg',
+        description: 'Une ville à découvrir',
+      })
+      .expect(303);
 
-    await request(app).get('/5').expect(200);
+    const res = await request(app).get('/voyages/5').expect(200);
+    expect(res.text).toContain('Edimbourg');
+  });
+
+  test('modifier un identifiant inexistant renvoie 404', async () => {
+    await request(app)
+      .put('/voyages/999')
+      .type('form')
+      .send({ _csrf: jeton, destination: 'Nice', pays: 'France', prix: '10' })
+      .expect(404);
   });
 });
 

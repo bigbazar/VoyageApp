@@ -1,103 +1,10 @@
+/**
+ * Page d'accueil : elle affiche la même liste que GET /voyages.
+ */
 var express = require('express');
 var router = express.Router();
-var BaseVoyages = require('../models/BaseVoyages.js');
-var validerVoyage = require('../validators/voyage.js').validerVoyage;
+var controleur = require('../controllers/voyages.js');
 
-let listVoyages = [...BaseVoyages];
-
-const Title = 'Vacances de rêves';
-
-/* GET home page. */
-// Route pour récupérer tous les voyages
-router.get('/', function (req, res, next) {
-  sortListVoyages();
-  res.render('listVoyages', { title: Title, voyages: listVoyages });
-});
-
-// Route pour récupérer un voyage par son ID
-// Le motif numérique évite que cette route n'intercepte /users ou /favicon.ico
-router.get('/:id(\\d+)', (req, res, next) => {
-  // Un tableau est toujours "vrai" en JavaScript : on cherche directement le voyage
-  // pour que le 404 fonctionne réellement quand l'id n'existe pas.
-  const voyage = listVoyages.find((voyage) => voyage.id === parseInt(req.params.id, 10));
-  if (!voyage) return res.status(404).send('Voyage non trouvé.');
-  sortListVoyages();
-  res.render('listVoyages', { title: Title, voyages: [voyage] });
-});
-
-// Route pour rechercher un voyage
-router.post('/search', (req, res, next) => {
-  const searchVoyage = (req.body.searchVoyage || '').trim();
-  const terme = searchVoyage.toLowerCase();
-  const prixMax = parseInt(searchVoyage, 10);
-
-  // Un seul filtre : un voyage ne peut plus être ajouté deux fois dans le résultat.
-  // Un champ vide renvoie toute la liste, et les prix ne sont comparés que sur un nombre valide.
-  const _voyages = listVoyages.filter(
-    (e) =>
-      e.destination.toLowerCase().indexOf(terme) > -1 ||
-      e.pays.toLowerCase().indexOf(terme) > -1 ||
-      (terme !== '' && !isNaN(prixMax) && e.prix <= prixMax),
-  );
-
-  if (_voyages.length === 0) return res.status(404).send('Voyage non trouvé.');
-  res.render('listVoyages', { title: Title, voyages: _voyages });
-});
-
-// Route pour ajouter un voyage
-router.post('/update', function (req, res, next) {
-  // Validation serveur : les champs sont vérifiés et normalisés avant tout
-  // enregistrement, quelles que soient les valeurs envoyées par le client.
-  const resultat = validerVoyage(req.body);
-  const voyage = resultat.voyage;
-
-  // L'id arrive en chaîne depuis le formulaire ; il vaut null pour un ajout.
-  const idSaisi = typeof req.body.id === 'string' ? req.body.id.trim() : '';
-  let id = null;
-  if (idSaisi !== '') {
-    id = parseInt(idSaisi, 10);
-    if (isNaN(id)) resultat.erreurs.push("L'identifiant du voyage est invalide.");
-  }
-
-  if (resultat.erreurs.length > 0) {
-    return res.status(400).render('listVoyages', {
-      title: Title,
-      voyages: listVoyages,
-      erreur: resultat.erreurs.join(' '),
-    });
-  }
-
-  if (id === null) {
-    // Le plus grand id existant + 1 : l'ancien calcul (longueur + 1) réutilisait
-    // un id déjà pris après une suppression.
-    voyage.id = listVoyages.reduce((max, e) => Math.max(max, parseInt(e.id, 10) || 0), 0) + 1;
-  } else {
-    // On stocke l'id en number pour que la recherche par id, la suppression et
-    // l'édition restent cohérentes.
-    voyage.id = id;
-    // Filtre sur l'id stocké en number et string
-    listVoyages = listVoyages.filter((e) => e.id !== id && e.id !== String(id));
-  }
-  listVoyages.push(voyage);
-  sortListVoyages();
-  res.render('listVoyages', { title: Title, voyages: listVoyages });
-});
-
-// Route pour supprimer un voyage
-router.post('/delete/:id', function (req, res, next) {
-  const id = parseInt(req.params.id, 10);
-  if (isNaN(id)) return res.status(404).send('Voyage non trouvé.');
-  listVoyages = [...listVoyages.filter((e) => e.id !== id)];
-  sortListVoyages();
-  res.render('listVoyages', { title: Title, voyages: listVoyages });
-});
-
-function sortListVoyages() {
-  listVoyages.sort((a, b) => {
-    if (a.destination < b.destination) return -1;
-    if (a.destination > b.destination) return 1;
-    return 0;
-  });
-}
+router.get('/', controleur.lister);
 
 module.exports = router;

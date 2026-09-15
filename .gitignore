@@ -128,3 +128,7 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Données d'exécution : le fichier est recréé depuis models/BaseVoyages.js
+/data/voyages.json
+/data/*.tmp

@@ -7,7 +7,9 @@ var helmet = require('helmet');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+var voyagesRouter = require('./routes/voyages');
 var csrf = require('./middlewares/csrf');
+var methodOverride = require('./middlewares/methodOverride');
 
 // Génération d'un fichier de configuration sur socket.js avec Swagger - Etape 1
 // const swaggerAutogen = require('swagger-autogen')();
@@ -71,11 +73,15 @@ app.use(express.urlencoded({ extended: false, limit: '100kb' }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Les formulaires HTML ne savent envoyer que GET et POST : le champ caché
+// _method permet d'utiliser PUT et DELETE (routes REST des voyages).
+app.use(methodOverride);
+
 // Protection CSRF : toute requête qui modifie l'état doit porter un jeton valide.
-// /search ne fait que lire la liste, elle est donc exemptée.
-app.use(csrf({ exemptions: ['/search'] }));
+app.use(csrf());
 
 app.use('/', indexRouter);
+app.use('/voyages', voyagesRouter);
 app.use('/users', usersRouter);
 
 // catch 404 and forward to error handler
