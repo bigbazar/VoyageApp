@@ -72,3 +72,19 @@ npm run format:check   # vérifie le formatage sans modifier les fichiers
 
 Les fichiers `views/*.ejs` ne sont pas formatés automatiquement, Prettier ne
 sachant pas les analyser.
+
+Les tests — suite jest + supertest dans tests/, un fichier par thème, avec un assistant commun ([aide.js (line 1)](/home/lionel/workgit/node/VoyageApp/tests/aide.js:1)) qui repart d'une application neuve à chaque test (les voyages vivent en mémoire, sinon les tests s'influenceraient entre eux), récupère le jeton CSRF de la page et relit le JSON des cartes exactement comme le fait le navigateur.
+
+- [voyages.test.js (line 1)](/home/lionel/workgit/node/VoyageApp/tests/voyages.test.js:1) — bug 1 (identifiant inconnu, URL non numérique) et bug 4 (identifiants uniques après suppression, édition qui conserve l'id, suppression invalide).
+- [recherche.test.js (line 1)](/home/lionel/workgit/node/VoyageApp/tests/recherche.test.js:1) — bug 3 : absence de doublons, champ vide ou absent, recherche par destination, pays et prix, et l'exemption CSRF de cette route.
+- [formulaire.test.js (line 1)](/home/lionel/workgit/node/VoyageApp/tests/formulaire.test.js:1) — bug 2 : plus d'arguments dans onclick, JSON exploitable malgré l'apostrophe de « d'Ellis Island », huit champs par carte.
+- [securite.test.js (line 1)](/home/lionel/workgit/node/VoyageApp/tests/securite.test.js:1) — en-têtes helmet, CSRF (sans jeton, jeton falsifié, jeton valide), dix cas de validation refusés, normalisation du prix, champs détournés ignorés, /docs présent en développement et absent en production.
+
+Couverture mesurée : 96 % des lignes, 88,6 % des branches, 100 % des fonctions. Les zones non couvertes sont des branches défensives (signature de jeton invalide, quelques règles de validation).
+
+Lint et format — eslint.config.js (format flat config) et .prettierrc + .prettierignore, avec les scripts npm run lint, lint:fix, format et format:check dans [package.json (line 5)](/home/lionel/workgit/node/VoyageApp/package.json:5). Zéro erreur de lint, formatage conforme. Deux points à signaler : j'ai d'abord installé ESLint 10, qui exige Node ≥ 20, et je suis redescendu en ESLint 9 puisque votre machine est en Node 18 — pensez-y si vous montez de version plus tard. Par ailleurs Prettier ne sait pas analyser les .ejs, donc les vues sont exclues du formatage automatique.
+
+Un bug découvert par les tests : la route /:id interceptait /users, ce qui rendait routes/users.js inaccessible (404). Le motif est maintenant limité aux identifiants numériques dans [routes/index.js (line 18)](/home/lionel/workgit/node/VoyageApp/routes/index.js:18). J'ai aussi coupé le journal des requêtes pendant les tests pour que la sortie reste lisible.
+
+Le README.md gagne une section « Tests et qualité », et le rapport d'audit est à jour.
+Deux réserves honnêtes. Les tests démarrent l'application sur un port local éphémère : dans cet environnement cloisonné j'ai dû demander une autorisation à chaque exécution, mais sur votre machine npm test fonctionne directement. Et le diff est volumineux (environ 6 300 lignes ajoutées) — l'essentiel vient du package-lock.json avec les nouvelles dépendances de développement, le reste étant le formatage de 20 fichiers et les tests eux-mêmes.
