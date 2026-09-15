@@ -52,11 +52,14 @@ les commandes sont en commentaire au début de `app.js`.
 
 - **En-têtes** : `helmet` applique notamment une politique de sécurité du contenu
   limitée aux CDN utilisés par les vues (Bootstrap, jQuery, Font Awesome).
+- **JavaScript en ligne** : interdit par la politique de sécurité du contenu ; les
+  comportements de la page sont branchés dans `public/javascripts/listVoyages.js`.
 - **CSRF** : tout `POST` qui modifie les données doit porter un jeton signé, présent
   dans le champ caché `_csrf` des formulaires (`middlewares/csrf.js`).
 - **Validation** : les voyages sont vérifiés et normalisés côté serveur avant
   enregistrement (`validators/voyage.js`) ; en cas d'erreur, le formulaire est
   refusé avec un code 400 et un message affiché sur la page.
+
 
 # 15.09.2026 23:54 Tests et qualité
 
@@ -99,6 +102,7 @@ Les routes REST — [routes/voyages.js (line 1)](/home/lionel/workgit/node/Voyag
 Trois améliorations découlent directement de cette restructuration. La recherche est devenue GET /voyages?q=… : l'URL est partageable, plus aucune route n'a besoin d'être exemptée du CSRF, et une recherche sans résultat affiche un état vide au lieu d'une 404. Après une écriture, le serveur redirige en 303 vers la liste, donc rafraîchir la page ne rejoue plus l'action. Enfin, le formulaire du modal bascule tout seul entre création et édition : le script place l'identifiant dans l'URL et active le champ _method.
 
 Vérifications
+
 - 68 tests répartis en 5 suites, dont une nouvelle suite dédiée au dépôt ([depot.test.js (line 1)](/home/lionel/workgit/node/VoyageApp/tests/depot.test.js:1)) qui contrôle le tri, les filtres, l'attribution des identifiants, la persistance après rechargement, la reprise sur fichier corrompu et l'absence de fichier temporaire résiduel.
 - Couverture : 98 % des lignes, 89 % des branches, 100 % des fonctions.
 - 13 contrôles dans un vrai navigateur, dont un harnais qui charge le fichier JavaScript du projet et confirme que cliquer sur « modifier » vise bien /voyages/3 avec _method actif, que « ajouter » revient sur /voyages, et que l'apostrophe de « d'Ellis Island » survit au passage.
@@ -137,3 +141,33 @@ tests/            tests automatisés (jest + supertest)
 Les voyages sont enregistrés dans `data/voyages.json`, créé au premier démarrage à
 partir de `models/BaseVoyages.js` s'il n'existe pas. Ce fichier contient des données
 d'exécution : il est ignoré par git.
+
+# 16.09.2026 00:25 expérience utilisateur et accessibilité
+
+Confort d'usage
+La suppression demande désormais confirmation : chaque formulaire de carte porte l'attribut data-confirmation ([listVoyages.ejs (line 119)](/home/lionel/workgit/node/VoyageApp/views/listVoyages.ejs:119)) et un écouteur vérifie la réponse avant de laisser passer l'envoi ([listVoyages.js (line 62)](/home/lionel/workgit/node/VoyageApp/public/javascripts/listVoyages.js:62)). J'ai vérifié dans le navigateur qu'un refus bloque bien l'envoi et qu'une acceptation le laisse passer.
+
+Chaque action laisse maintenant une trace : la redirection porte ?fait=creation|modification|suppression et la page affiche le message correspondant ([controllers/voyages.js (line 11)](/home/lionel/workgit/node/VoyageApp/controllers/voyages.js:11)). Un paramètre inconnu n'affiche rien, c'est testé.
+
+L'entête n'est plus chargée en AJAX : elle est rendue par le serveur ([entete.ejs (line 1)](/home/lionel/workgit/node/VoyageApp/views/partials/entete.ejs:1)), ce qui supprime une requête, rend la page complète sans JavaScript et améliore l'indexation. Les fichiers public/html/entete.html et public/javascripts/entete.js ont disparu, et le menu passe en français.
+
+Accessibilité — les boutons d'icône portent un libellé explicite (« Modifier le voyage à Rome », « Supprimer le voyage à Rome »), les icônes sont ignorées par les lecteurs d'écran, les images décrivent leur destination au lieu du générique « Card image cap », le titre de la fenêtre modale est correctement référencé (il pointait sur la fenêtre elle-même), et le <label> orphelin qui traînait dans chaque carte a été retiré.
+
+Un vrai gain de sécurité au passage — les comportements passant désormais par des écouteurs et non plus par des attributs onclick, la politique de sécurité du contenu n'autorise plus le JavaScript en ligne ([app.js (line 30)](/home/lionel/workgit/node/VoyageApp/app.js:30)). C'était la limite signalée à l'étape 2.
+
+Mise en page — grille responsive (une colonne sur mobile, deux sur tablette, trois sur ordinateur), cartes de hauteur égale, bouton de suppression correctement ancré, prix au format français (1 200 € au lieu de 1200 €), jQuery chargé une seule fois et avant Bootstrap. J'ai contrôlé le résultat en capture d'écran aux largeurs bureau et mobile.
+
+Images indisponibles — en vérifiant le rendu, j'ai constaté que 4 des 8 adresses d'images (Londres, Séville, Porto et Lisbonne) renvoient une erreur 404. J'ai ajouté une vignette de repli « Image indisponible » ([listVoyages.js (line 76)](/home/lionel/workgit/node/VoyageApp/public/javascripts/listVoyages.js:76)), vérifiée avec de vraies réponses 404, qui remplace l'icône cassée du navigateur ; les images sont aussi recadrées plutôt qu'étirées. Remplacer ces quatre adresses par des visuels pérennes reste un travail de contenu.
+
+Deux points pratiques : les messages d'action passent par l'URL, donc rafraîchir la page les réaffiche (c'est le compromis retenu pour éviter d'ajouter des sessions), et le dossier public/html est désormais vide.
+
+## Confort d'usage et accessibilité
+
+- la suppression demande toujours confirmation ;
+- après un ajout, une modification ou une suppression, un message récapitule
+  l'action (paramètre `?fait=` de la redirection) ;
+- une recherche sans résultat affiche un message au lieu d'une page d'erreur ;
+- les boutons d'icône portent un libellé (`aria-label`) et les icônes sont ignorées
+  des lecteurs d'écran (`aria-hidden`) ;
+- les images décrivent la destination, et l'entête est rendue par le serveur :
+  la page est complète sans JavaScript.

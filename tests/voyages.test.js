@@ -19,12 +19,12 @@ const liste = () => request(app).get('/voyages');
 describe('Affichage des voyages', () => {
   test("la page d'accueil liste les 8 voyages de départ", async () => {
     const res = await request(app).get('/').expect(200);
-    expect(res.text.match(/class="card col-2/g)).toHaveLength(8);
+    expect(res.text.match(/data-voyage="/g)).toHaveLength(8);
   });
 
   test('la collection est aussi disponible sur /voyages', async () => {
     const res = await liste().expect(200);
-    expect(res.text.match(/class="card col-2/g)).toHaveLength(8);
+    expect(res.text.match(/data-voyage="/g)).toHaveLength(8);
   });
 
   test('un identifiant inexistant renvoie 404 au lieu d’une erreur 500', async () => {
@@ -38,7 +38,7 @@ describe('Affichage des voyages', () => {
 
   test('un voyage existant s’affiche seul', async () => {
     const res = await request(app).get('/voyages/3').expect(200);
-    expect(res.text.match(/class="card col-2/g)).toHaveLength(1);
+    expect(res.text.match(/data-voyage="/g)).toHaveLength(1);
   });
 
   test('le détail est atteignable depuis sa propre URL', async () => {
@@ -54,7 +54,7 @@ describe('Création, modification et suppression', () => {
       .type('form')
       .send({ _csrf: jeton, destination: 'Verone', pays: 'Italie', prix: '250', devise: '€' })
       .expect(303)
-      .expect('Location', '/voyages');
+      .expect('Location', '/voyages?fait=creation');
 
     const res = await liste().expect(200);
     expect(res.text).toContain('Verone');

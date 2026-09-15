@@ -13,4 +13,6 @@ a {
 
 .img-top {
   height: 200px;
+  /* Les images sources ont des formats variés : on recadre plutôt que d'étirer */
+  object-fit: cover;
 }

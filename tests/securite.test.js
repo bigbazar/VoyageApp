@@ -23,6 +23,16 @@ describe('En-têtes de sécurité', () => {
     expect(res.headers['content-security-policy']).toContain('https://cdn.jsdelivr.net');
     expect(res.headers['x-powered-by']).toBeUndefined();
   });
+
+  test('la politique de sécurité interdit le JavaScript en ligne', async () => {
+    const res = await request(app).get('/').expect(200);
+    const scriptSrc = res.headers['content-security-policy']
+      .split(';')
+      .find((directive) => directive.trim().startsWith('script-src'));
+
+    expect(scriptSrc).toBeDefined();
+    expect(scriptSrc).not.toContain('unsafe-inline');
+  });
 });
 
 describe('Protection CSRF', () => {

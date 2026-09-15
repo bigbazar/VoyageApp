@@ -13,7 +13,7 @@ beforeEach(() => {
 
 const destinations = (html) =>
   [...html.matchAll(/<h5 class="m-1">([^<]*)<\/h5>/g)].map((resultat) => resultat[1]);
-const cartes = (html) => html.match(/class="card col-2/g) || [];
+const cartes = (html) => html.match(/data-voyage="/g) || [];
 
 describe('Recherche de voyages', () => {
   test('un terme correspondant à plusieurs critères ne crée pas de doublon', async () => {

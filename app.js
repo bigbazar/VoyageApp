@@ -20,19 +20,14 @@ var app = express();
 
 // En-têtes de sécurité. La politique de sécurité du contenu est ajustée aux
 // ressources réellement chargées par les vues (Bootstrap, jQuery, Font Awesome
-// depuis des CDN). 'unsafe-inline' reste nécessaire pour les attributs onclick
-// des boutons d'édition et d'ajout.
+// depuis des CDN). Le JavaScript en ligne est interdit : les comportements de la
+// page sont branchés dans public/javascripts/listVoyages.js.
 app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: [
-          "'self'",
-          "'unsafe-inline'",
-          'https://code.jquery.com',
-          'https://cdn.jsdelivr.net',
-        ],
+        scriptSrc: ["'self'", 'https://code.jquery.com', 'https://cdn.jsdelivr.net'],
         styleSrc: [
           "'self'",
           "'unsafe-inline'",

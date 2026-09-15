@@ -10,7 +10,6 @@ module.exports = [
     ignores: [
       'node_modules/**',
       'coverage/**',
-      'public/html/**',
       // Ancien fichier de données jamais importé, à supprimer (voir audit)
       'routes/module.js',
     ],
@@ -36,10 +35,6 @@ module.exports = [
     files: ['public/javascripts/**/*.js'],
     languageOptions: {
       globals: { ...globals.browser, $: 'readonly' },
-    },
-    rules: {
-      // Ces fonctions sont appelées depuis les attributs onclick des vues EJS
-      'no-unused-vars': ['error', { varsIgnorePattern: '^(editVoyage|clearModal)$' }],
     },
   },
 

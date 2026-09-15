@@ -7,15 +7,24 @@ const validerVoyage = require('../validators/voyage.js').validerVoyage;
 
 const TITRE = 'Vacances de rêves';
 
+/** Message affiché après une action, transmis par l'URL de redirection. */
+const MESSAGES = new Map([
+  ['creation', 'Le voyage a été ajouté.'],
+  ['modification', 'Le voyage a été mis à jour.'],
+  ['suppression', 'Le voyage a été supprimé.'],
+]);
+
 /** Affiche la liste, éventuellement filtrée par une recherche (?q=…). */
 function lister(req, res) {
   const recherche = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+  const fait = typeof req.query.fait === 'string' ? req.query.fait : '';
 
   res.render('listVoyages', {
     title: TITRE,
     voyages: depot.lister({ recherche: recherche }),
     recherche: recherche,
     erreur: null,
+    message: MESSAGES.get(fait) || null,
   });
 }
 
@@ -28,6 +37,7 @@ function afficher(req, res) {
     voyages: [voyage],
     recherche: '',
     erreur: null,
+    message: null,
   });
 }
 
@@ -38,6 +48,7 @@ function refuser(res, erreurs) {
     voyages: depot.lister(),
     recherche: '',
     erreur: erreurs.join(' '),
+    message: null,
   });
 }
 
@@ -47,7 +58,7 @@ function creer(req, res) {
   if (resultat.erreurs.length > 0) return refuser(res, resultat.erreurs);
 
   depot.creer(resultat.voyage);
-  res.redirect(303, '/voyages');
+  res.redirect(303, '/voyages?fait=creation');
 }
 
 // PUT /voyages/:id
@@ -59,7 +70,7 @@ function modifier(req, res) {
   if (resultat.erreurs.length > 0) return refuser(res, resultat.erreurs);
 
   depot.modifier(id, resultat.voyage);
-  res.redirect(303, '/voyages');
+  res.redirect(303, '/voyages?fait=modification');
 }
 
 // DELETE /voyages/:id
@@ -67,7 +78,7 @@ function supprimer(req, res) {
   const id = parseInt(req.params.id, 10);
   if (isNaN(id) || !depot.supprimer(id)) return res.status(404).send('Voyage non trouvé.');
 
-  res.redirect(303, '/voyages');
+  res.redirect(303, '/voyages?fait=suppression');
 }
 
 module.exports = {
