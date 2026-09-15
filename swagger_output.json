@@ -21,7 +21,7 @@
         }
       }
     },
-    "/voyage/{id}": {
+    "/{id}": {
       "get": {
         "description": "",
         "parameters": [
@@ -39,15 +39,21 @@
         }
       }
     },
-    "/search/{text}": {
-      "get": {
+    "/search": {
+      "post": {
         "description": "",
         "parameters": [
           {
-            "name": "text",
-            "in": "path",
-            "required": true,
-            "type": "string"
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "searchVoyage": {
+                  "example": "any"
+                }
+              }
+            }
           }
         ],
         "responses": {
@@ -57,20 +63,30 @@
         }
       }
     },
-    "/addVoyage": {
-      "get": {
+    "/update": {
+      "post": {
         "description": "",
         "responses": {
           "default": {
             "description": ""
           }
         }
-      },
+      }
+    },
+    "/delete/{id}": {
       "post": {
         "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
         "responses": {
-          "default": {
-            "description": ""
+          "404": {
+            "description": "Not Found"
           }
         }
       }

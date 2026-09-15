@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var BaseVoyages = require('../models/BaseVoyages.js')
+var validerVoyage = require('../validators/voyage.js').validerVoyage;
 
 let listVoyages = [...BaseVoyages];
 
@@ -43,19 +44,37 @@ router.post('/search', (req, res, next) => {
 
 // Route pour ajouter un voyage
 router.post('/update', function(req, res, next) {
-  let voyage = { ...req.body };
-  if (voyage.id == undefined || voyage.id == '') {
+  // Validation serveur : les champs sont vérifiés et normalisés avant tout
+  // enregistrement, quelles que soient les valeurs envoyées par le client.
+  const resultat = validerVoyage(req.body);
+  const voyage = resultat.voyage;
+
+  // L'id arrive en chaîne depuis le formulaire ; il vaut null pour un ajout.
+  const idSaisi = typeof req.body.id === 'string' ? req.body.id.trim() : '';
+  let id = null;
+  if (idSaisi !== '') {
+    id = parseInt(idSaisi, 10);
+    if (isNaN(id)) resultat.erreurs.push('L\'identifiant du voyage est invalide.');
+  }
+
+  if (resultat.erreurs.length > 0) {
+    return res.status(400).render('listVoyages', {
+      title: Title,
+      voyages: listVoyages,
+      erreur: resultat.erreurs.join(' ')
+    });
+  }
+
+  if (id === null) {
     // Le plus grand id existant + 1 : l'ancien calcul (longueur + 1) réutilisait
     // un id déjà pris après une suppression.
     voyage.id = listVoyages.reduce((max, e) => Math.max(max, parseInt(e.id, 10) || 0), 0) + 1;
   } else {
-    // L'id arrive en chaîne depuis le formulaire : on le stocke en number pour que
-    // la recherche par id, la suppression et l'édition restent cohérentes.
-    voyage.id = parseInt(voyage.id, 10);
+    // On stocke l'id en number pour que la recherche par id, la suppression et
+    // l'édition restent cohérentes.
+    voyage.id = id;
     // Filtre sur l'id stocké en number et string
-    let newlistVoyages = listVoyages.filter(e => e.id !== voyage.id && e.id !== String(voyage.id));
-    listVoyages = [];
-    listVoyages = [...newlistVoyages];
+    listVoyages = listVoyages.filter(e => e.id !== id && e.id !== String(id));
   }
   listVoyages.push(voyage);
   sortListVoyages();
@@ -64,7 +83,8 @@ router.post('/update', function(req, res, next) {
 
 // Route pour supprimer un voyage
 router.post('/delete/:id', function(req, res, next) {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) return res.status(404).send("Voyage non trouvé.");
   listVoyages = [...listVoyages.filter(e => e.id !== id)];
   sortListVoyages();
   res.render('listVoyages', { title: Title, voyages: listVoyages});

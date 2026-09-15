@@ -23,6 +23,13 @@
   </head>
 
   <body>
+    <!-- Message affiché quand la validation serveur refuse le formulaire -->
+    <% if (typeof erreur !== 'undefined' && erreur) { %>
+      <div class="alert alert-danger m-2" role="alert">
+        <strong>Enregistrement refusé :</strong> <%= erreur %>
+      </div>
+    <% } %>
+
     <!-- Modal -->
     <div class="modal fade" id="modalVoyage" tabindex="-1" role="dialog" aria-labelledby="modalVoyage" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered" role="document">
@@ -35,35 +42,37 @@
           </div>
           <div class="modal-body">
             <form method="post" action="/update">
+              <!-- Jeton CSRF : le serveur refuse toute modification sans ce champ -->
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
               <div class="mb-3">
                 <input class="form-control" type="number"  id="idUpdate" name="id" style="opacity: 0;"/>
 
                 <label class="form-label" for="destination">Destination :</label>
-                <input class="form-control" placeholder="Destination"  id="destination" name="destination"/>
+                <input class="form-control" placeholder="Destination"  id="destination" name="destination" required maxlength="80"/>
               </div>
               <div class="mb-3">
                 <label class="form-label" for="pays">Pays :</label>
-                <input class="form-control" placeholder="Pays" id="pays" name="pays"/>
+                <input class="form-control" placeholder="Pays" id="pays" name="pays" required maxlength="60"/>
               </div>
               <div class="mb-3">
                 <label class="form-label" for="prix">Prix :</label>
-                <input class="form-control" type="number" placeholder="Prix" id="prix" name="prix"/>
+                <input class="form-control" type="number" placeholder="Prix" id="prix" name="prix" required min="0" max="1000000" step="0.01"/>
               </div>
               <div class="mb-3">
-                <label class="form-label"for="'devise">Devise :</label>
-                <input class="form-control" placeholder="Devise" id="devise" name="devise"/>
+                <label class="form-label" for="devise">Devise :</label>
+                <input class="form-control" placeholder="Devise" id="devise" name="devise" maxlength="8"/>
               </div>
               <div class="mb-3">
-                <label class="form-label" for="'image">Image :</label>
-                <input class="form-control" placeholder="Image" id="image" name="image"/>
+                <label class="form-label" for="image">Image :</label>
+                <input class="form-control" placeholder="Image" id="image" name="image" maxlength="500"/>
               </div>
               <div class="mb-3">
-                <label class="form-label" for="'titre">Titre :</label>
-                <input class="form-control" placeholder="Titre" id="titre" name="titre"/>
+                <label class="form-label" for="titre">Titre :</label>
+                <input class="form-control" placeholder="Titre" id="titre" name="titre" maxlength="120"/>
               </div>      
               <div class="mb-3">
-                <label class="form-label" for="'description">Description :</label>
-                <input class="form-control" placeholder="Description" id="description" name="description"/>
+                <label class="form-label" for="description">Description :</label>
+                <input class="form-control" placeholder="Description" id="description" name="description" maxlength="2000"/>
               </div>            
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
@@ -101,6 +110,7 @@
           <div>
             <!-- Bouton Supprimer -->
             <form action="/delete/<%= voyage.id %>" method="post">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                 <button type="submit" class="btn btn-danger position-absolute top-0 start-50 rounded-circle">
                 <i class="fas fa-trash"></i>
               </button>
