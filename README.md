@@ -11,6 +11,8 @@ npm start
 
 Appli dispo sur : http://localhost:3000
 
+Prérequis : Node.js 18.18 ou plus (voir le champ `engines` de `package.json`).
+
 # 15.09.26 23:25 Correction des bugs :
 
 Identifiant inconnu — [routes/index.js (line 17)](/home/lionel/workgit/node/VoyageApp/routes/index.js:17) cherche désormais directement le voyage concerné au lieu de l'emballer dans un tableau (qui était toujours considéré comme « vrai », ce qui rendait le 404 inatteignable). /999 et /favicon.ico renvoient maintenant une vraie page 404 « Voyage non trouvé » au lieu d'une erreur 500.
@@ -40,6 +42,7 @@ Les modifications ne sont pas encore validées dans git (7 fichiers modifiés, 2
 | `NODE_ENV`          | `development` active la documentation Swagger                                                                           | `development`               |
 | `CSRF_SECRET`       | secret de signature des jetons CSRF ; à définir en production pour que les jetons restent valables après un redémarrage | tiré au hasard au démarrage |
 | `VOYAGES_DATA_FILE` | chemin du fichier de données des voyages                                                                                | `data/voyages.json`         |
+| `HOST`              | interface d'écoute : `127.0.0.1` en développement (non exposé au réseau), `0.0.0.0` en production                       | selon `NODE_ENV`            |
 
 ## Documentation de l'API
 
@@ -59,7 +62,6 @@ les commandes sont en commentaire au début de `app.js`.
 - **Validation** : les voyages sont vérifiés et normalisés côté serveur avant
   enregistrement (`validators/voyage.js`) ; en cas d'erreur, le formulaire est
   refusé avec un code 400 et un message affiché sur la page.
-
 
 # 15.09.2026 23:54 Tests et qualité
 
@@ -171,3 +173,31 @@ Deux points pratiques : les messages d'action passent par l'URL, donc rafraîchi
   des lecteurs d'écran (`aria-hidden`) ;
 - les images décrivent la destination, et l'entête est rendue par le serveur :
   la page est complète sans JavaScript.
+
+## Intégration continue
+
+Le fichier `.github/workflows/ci.yml` lance, à chaque envoi sur `main` et à chaque
+demande de fusion, sur Node 18, 20 et 22 :
+
+```
+npm ci                 # installation à partir du fichier de verrouillage
+npm run format:check   # formatage
+npm run lint           # analyse statique
+npm test               # tests
+```
+
+# 16.09.26 00:37 Dernières tâches de l'audit
+
+Code mort — routes/module.js a disparu, ainsi que les deux exceptions qu'il fallait maintenir pour lui dans ESLint et Jest. En vérifiant, j'ai retrouvé un second vestige listé dans l'audit : views/index.ejs, jamais rendue par aucune route ; elle est supprimée aussi. J'ai confirmé qu'il ne reste aucune référence à l'un ou l'autre dans le projet.
+
+Dépendances — boostrap (faute de frappe, jamais importé), fetch et node-fetch sont retirés, et nodemon est passé en devDependencies puisque c'est un outil de développement. J'ai ajouté un champ engines qui documente le Node 18.18 minimum, découvert à l'étape 3 quand ESLint 10 s'est révélé incompatible.
+
+Sécurité des dépendances — npm audit signalait 5 vulnérabilités : une élevée (déni de service via brace-expansion) et quatre modérées (morgan et qs, ce dernier entraîné par Express). Toutes étaient corrigeables sans rupture, et le sont : morgan 1.12.1, express 4.22.3, qs 6.16.0, brace-expansion 5.0.12. npm audit ne signale plus rien.
+
+Intégration continue — [ci.yml (line 1)](/home/lionel/workgit/node/VoyageApp/.github/workflows/ci.yml:1) se déclenche à chaque envoi sur main et à chaque demande de fusion, sur Node 18, 20 et 22, et enchaîne npm ci, la vérification du formatage, l'analyse statique puis les tests.
+
+Écoute réseau — bin/www acceptait les connexions sur toutes les interfaces, même en développement. Il écoute maintenant sur 127.0.0.1 en développement et sur 0.0.0.0 en production, avec la variable HOST pour forcer l'un ou l'autre ([bin/www (line 15)](/home/lionel/workgit/node/VoyageApp/bin/www:15)). J'ai vérifié les trois cas en lançant le serveur : 127.0.0.1:3230 en développement, 0.0.0.0:3231 en production, et HOST=0.0.0.0 respecté en développement, chaque fois avec une réponse HTTP 200. Le devcontainer force HOST=0.0.0.0 pour que l'aperçu automatique continue de fonctionner.
+
+Vérifications — j'ai commencé par rejouer npm ci, l'étape exacte de la CI : l'installation propre à partir du fichier de verrouillage fonctionne, puis formatage, lint et les 81 tests passent. Le YAML du workflow est valide et sa structure contrôlée (6 étapes). Je n'ai en revanche pas pu exécuter GitHub Actions ici, faute de runner : j'ai validé la syntaxe et rejoué ses étapes localement.
+
+Deux points pratiques. Si votre conteneur mappe les ports au niveau Docker plutôt que via VS Code, il faudra mettre HOST=0.0.0.0 ; le devcontainer du dépôt le fait déjà. Et les modifications ne sont pas encore committées (10 fichiers modifiés, 2 supprimés, .github/ ajouté) — l'audit complet, désormais coché de bout en bout, se trouve dans [audit-voyageapp.md](/home/lionel/Documents/Codex/2026-09-15/comment-peut-on-am-liorer-ce/outputs/audit-voyageapp.md).

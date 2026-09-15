@@ -4,6 +4,9 @@
     "cpus": 4
   },
   "waitFor": "onCreateCommand",
+  "remoteEnv": {
+    "HOST": "0.0.0.0"
+  },
   "updateContentCommand": "npm install",
   "postCreateCommand": "",
   "postAttachCommand": {

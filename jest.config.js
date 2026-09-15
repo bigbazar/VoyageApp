@@ -15,6 +15,6 @@ module.exports = {
     'middlewares/**/*.js',
     'validators/**/*.js',
   ],
-  coveragePathIgnorePatterns: ['/node_modules/', '/routes/module.js'],
+  coveragePathIgnorePatterns: ['/node_modules/'],
   coverageDirectory: 'coverage',
 };

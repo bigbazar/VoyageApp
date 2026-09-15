@@ -9,11 +9,17 @@ var debug = require('debug')('voyageapp:server');
 var http = require('http');
 
 /**
- * Get port from environment and store in Express.
+ * Get port and host from environment and store in Express.
  */
 
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
+
+// En développement, le serveur n'écoute que sur la machine locale : il n'est pas
+// exposé au réseau. Mettre HOST=0.0.0.0 pour écouter sur toutes les interfaces
+// (nécessaire en production et dans certains conteneurs).
+var host = process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1');
+app.set('host', host);
 
 /**
  * Create HTTP server.
@@ -22,10 +28,10 @@ app.set('port', port);
 var server = http.createServer(app);
 
 /**
- * Listen on provided port, on all network interfaces.
+ * Listen on provided port and host.
  */
 
-server.listen(port);
+server.listen(port, host);
 server.on('error', onError);
 server.on('listening', onListening);
 
@@ -81,6 +87,6 @@ function onError(error) {
 
 function onListening() {
   var addr = server.address();
-  var bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
+  var bind = typeof addr === 'string' ? 'pipe ' + addr : addr.address + ':' + addr.port;
   debug('Listening on ' + bind);
 }

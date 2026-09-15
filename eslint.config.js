@@ -6,14 +6,7 @@ const js = require('@eslint/js');
 const globals = require('globals');
 
 module.exports = [
-  {
-    ignores: [
-      'node_modules/**',
-      'coverage/**',
-      // Ancien fichier de données jamais importé, à supprimer (voir audit)
-      'routes/module.js',
-    ],
-  },
+  { ignores: ['node_modules/**', 'coverage/**'] },
 
   js.configs.recommended,
 

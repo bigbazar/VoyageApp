@@ -2,6 +2,9 @@
   "name": "voyageapp",
   "version": "0.0.0",
   "private": true,
+  "engines": {
+    "node": ">=18.18"
+  },
   "scripts": {
     "start": "nodemon ./bin/www",
     "test": "jest",
@@ -12,23 +15,20 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "boostrap": "^2.0.0",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
     "ejs": "^6.0.1",
     "express": "^4.22.2",
-    "fetch": "^1.1.0",
     "helmet": "^8.3.0",
     "http-errors": "~1.6.3",
-    "morgan": "^1.11.0",
-    "node-fetch": "^3.3.2",
-    "nodemon": "^3.1.0"
+    "morgan": "^1.11.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
     "eslint": "^9.39.5",
     "globals": "^17.12.0",
     "jest": "^30.5.1",
+    "nodemon": "^3.1.14",
     "prettier": "^3.9.6",
     "supertest": "^7.2.2",
     "swagger-autogen": "^2.23.7",
