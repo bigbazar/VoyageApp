@@ -14,7 +14,7 @@ const LONGUEURS = {
   devise: 8,
   image: 500,
   titre: 120,
-  description: 2000
+  description: 2000,
 };
 
 const DEVISES = ['€', '$', '£', 'CHF', 'CAD'];
@@ -59,15 +59,15 @@ function validerVoyage(corps) {
   // Devise : facultative (€ par défaut), limitée aux devises connues
   voyage.devise = texte(corps.devise) || '€';
   if (DEVISES.indexOf(voyage.devise) === -1) {
-    erreurs.push('La devise doit être l\'une des suivantes : ' + DEVISES.join(', ') + '.');
+    erreurs.push("La devise doit être l'une des suivantes : " + DEVISES.join(', ') + '.');
   }
 
   // Image : facultative, adresse http(s) ou chemin local uniquement
   voyage.image = texte(corps.image);
   if (voyage.image !== '' && !/^(https?:\/\/|\/)/i.test(voyage.image)) {
-    erreurs.push('L\'image doit être une adresse http(s) ou un chemin commençant par /.');
+    erreurs.push("L'image doit être une adresse http(s) ou un chemin commençant par /.");
   } else if (voyage.image.length > LONGUEURS.image) {
-    erreurs.push('L\'adresse de l\'image ne doit pas dépasser ' + LONGUEURS.image + ' caractères.');
+    erreurs.push("L'adresse de l'image ne doit pas dépasser " + LONGUEURS.image + ' caractères.');
   }
 
   // Titre et description : facultatifs, longueur bornée
@@ -88,5 +88,5 @@ module.exports = {
   validerVoyage: validerVoyage,
   LONGUEURS: LONGUEURS,
   DEVISES: DEVISES,
-  PRIX_MAX: PRIX_MAX
+  PRIX_MAX: PRIX_MAX,
 };

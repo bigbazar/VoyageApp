@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-var BaseVoyages = require('../models/BaseVoyages.js')
+var BaseVoyages = require('../models/BaseVoyages.js');
 var validerVoyage = require('../validators/voyage.js').validerVoyage;
 
 let listVoyages = [...BaseVoyages];
@@ -9,19 +9,20 @@ const Title = 'Vacances de rêves';
 
 /* GET home page. */
 // Route pour récupérer tous les voyages
-router.get('/', function(req, res, next) {
+router.get('/', function (req, res, next) {
   sortListVoyages();
-  res.render('listVoyages', { title: Title, voyages: listVoyages});
+  res.render('listVoyages', { title: Title, voyages: listVoyages });
 });
 
 // Route pour récupérer un voyage par son ID
-router.get("/:id", (req, res, next) => {
+// Le motif numérique évite que cette route n'intercepte /users ou /favicon.ico
+router.get('/:id(\\d+)', (req, res, next) => {
   // Un tableau est toujours "vrai" en JavaScript : on cherche directement le voyage
   // pour que le 404 fonctionne réellement quand l'id n'existe pas.
-  const voyage = listVoyages.find(voyage => voyage.id === parseInt(req.params.id, 10));
-  if (!voyage) return res.status(404).send("Voyage non trouvé.");
+  const voyage = listVoyages.find((voyage) => voyage.id === parseInt(req.params.id, 10));
+  if (!voyage) return res.status(404).send('Voyage non trouvé.');
   sortListVoyages();
-  res.render('listVoyages', { title: Title, voyages: [voyage]});
+  res.render('listVoyages', { title: Title, voyages: [voyage] });
 });
 
 // Route pour rechercher un voyage
@@ -32,18 +33,19 @@ router.post('/search', (req, res, next) => {
 
   // Un seul filtre : un voyage ne peut plus être ajouté deux fois dans le résultat.
   // Un champ vide renvoie toute la liste, et les prix ne sont comparés que sur un nombre valide.
-  const _voyages = listVoyages.filter(e =>
-    e.destination.toLowerCase().indexOf(terme) > -1 ||
-    e.pays.toLowerCase().indexOf(terme) > -1 ||
-    (terme !== '' && !isNaN(prixMax) && e.prix <= prixMax)
+  const _voyages = listVoyages.filter(
+    (e) =>
+      e.destination.toLowerCase().indexOf(terme) > -1 ||
+      e.pays.toLowerCase().indexOf(terme) > -1 ||
+      (terme !== '' && !isNaN(prixMax) && e.prix <= prixMax),
   );
 
-  if (_voyages.length === 0) return res.status(404).send("Voyage non trouvé.");
-  res.render('listVoyages', { title: Title, voyages: _voyages});
+  if (_voyages.length === 0) return res.status(404).send('Voyage non trouvé.');
+  res.render('listVoyages', { title: Title, voyages: _voyages });
 });
 
 // Route pour ajouter un voyage
-router.post('/update', function(req, res, next) {
+router.post('/update', function (req, res, next) {
   // Validation serveur : les champs sont vérifiés et normalisés avant tout
   // enregistrement, quelles que soient les valeurs envoyées par le client.
   const resultat = validerVoyage(req.body);
@@ -54,14 +56,14 @@ router.post('/update', function(req, res, next) {
   let id = null;
   if (idSaisi !== '') {
     id = parseInt(idSaisi, 10);
-    if (isNaN(id)) resultat.erreurs.push('L\'identifiant du voyage est invalide.');
+    if (isNaN(id)) resultat.erreurs.push("L'identifiant du voyage est invalide.");
   }
 
   if (resultat.erreurs.length > 0) {
     return res.status(400).render('listVoyages', {
       title: Title,
       voyages: listVoyages,
-      erreur: resultat.erreurs.join(' ')
+      erreur: resultat.erreurs.join(' '),
     });
   }
 
@@ -74,27 +76,27 @@ router.post('/update', function(req, res, next) {
     // l'édition restent cohérentes.
     voyage.id = id;
     // Filtre sur l'id stocké en number et string
-    listVoyages = listVoyages.filter(e => e.id !== id && e.id !== String(id));
+    listVoyages = listVoyages.filter((e) => e.id !== id && e.id !== String(id));
   }
   listVoyages.push(voyage);
   sortListVoyages();
-  res.render('listVoyages', { title: Title, voyages: listVoyages});
+  res.render('listVoyages', { title: Title, voyages: listVoyages });
 });
 
 // Route pour supprimer un voyage
-router.post('/delete/:id', function(req, res, next) {
+router.post('/delete/:id', function (req, res, next) {
   const id = parseInt(req.params.id, 10);
-  if (isNaN(id)) return res.status(404).send("Voyage non trouvé.");
-  listVoyages = [...listVoyages.filter(e => e.id !== id)];
+  if (isNaN(id)) return res.status(404).send('Voyage non trouvé.');
+  listVoyages = [...listVoyages.filter((e) => e.id !== id)];
   sortListVoyages();
-  res.render('listVoyages', { title: Title, voyages: listVoyages});
+  res.render('listVoyages', { title: Title, voyages: listVoyages });
 });
 
 function sortListVoyages() {
-  listVoyages.sort((a,b) => {
+  listVoyages.sort((a, b) => {
     if (a.destination < b.destination) return -1;
     if (a.destination > b.destination) return 1;
-    return 0
+    return 0;
   });
 }
 

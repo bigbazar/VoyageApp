@@ -1,0 +1,11 @@
+# Dépendances et artefacts
+node_modules
+coverage
+package-lock.json
+
+# Fichiers générés
+swagger_output.json
+
+# Vues EJS : Prettier ne sait pas les analyser
+*.ejs
+public/html

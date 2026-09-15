@@ -57,7 +57,7 @@ module.exports = function csrf(options) {
     const jeton = (req.body && req.body._csrf) || req.get('x-csrf-token');
 
     if (!jetonValide(jeton)) {
-      return res.status(403).send("Requête refusée : jeton CSRF manquant ou invalide.");
+      return res.status(403).send('Requête refusée : jeton CSRF manquant ou invalide.');
     }
 
     next();
